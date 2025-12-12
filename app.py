@@ -121,15 +121,5 @@ html_code = """
 </html>
 """
 
-# Streamlit 내장 함수로 HTML 실행 (높이를 넉넉하게 500으로 설정)
+# Streamlit 내장 함수로 HTML 실행
 components.html(html_code, height=500)
-"""
-
----
-
-### 2. `requirements.txt` (수정 필수)
-
-`streamlit-p5` 때문에 오류가 났으므로, **이 파일에서 해당 라이브러리를 반드시 지워야 합니다.**
-
-```txt
-streamlit
