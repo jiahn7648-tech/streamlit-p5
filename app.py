@@ -4,11 +4,11 @@ import streamlit.components.v1 as components
 # 페이지 설정
 st.set_page_config(page_title="물리 엔진 시뮬레이션", layout="centered")
 
-st.title("🍎 현실적인 2D 물리 엔진 (Matter.js)")
+st.title("🍎 꽉 막힌 물리 엔진 방 (Matter.js)")
 st.markdown("---")
-st.info("화면을 클릭하여 공을 생성하고, 드래그하여 던져보세요!")
+st.info("이제 천장도 막혀있습니다! 공을 세게 던져보세요.")
 
-# HTML/JS 코드 (물리 엔진을 직접 포함)
+# HTML/JS 코드
 html_code = """
 <!DOCTYPE html>
 <html>
@@ -22,7 +22,6 @@ html_code = """
   </head>
   <body>
     <script>
-      // Matter.js 모듈 별칭
       let Engine = Matter.Engine,
           Render = Matter.Render,
           Runner = Matter.Runner,
@@ -34,25 +33,31 @@ html_code = """
 
       let engine;
       let world;
-      let ground;
+      let ground, ceiling, leftWall, rightWall;
       let mConstraint;
 
       function setup() {
         createCanvas(600, 450);
 
-        // 1. 엔진 생성 및 중력 설정
+        // 1. 엔진 생성
         engine = Engine.create();
         world = engine.world;
         world.gravity.y = 1; 
 
-        // 2. 바닥 및 벽 생성
+        // 2. 사방 벽 생성 (천장 추가됨!)
+        // 바닥
         ground = Bodies.rectangle(width / 2, height, width, 50, { isStatic: true });
-        let leftWall = Bodies.rectangle(0, height/2, 50, height, { isStatic: true });
-        let rightWall = Bodies.rectangle(width, height/2, 50, height, { isStatic: true });
+        // 천장 (y=0 위치에 생성)
+        ceiling = Bodies.rectangle(width / 2, 0, width, 50, { isStatic: true });
+        // 왼쪽 벽
+        leftWall = Bodies.rectangle(0, height/2, 50, height, { isStatic: true });
+        // 오른쪽 벽
+        rightWall = Bodies.rectangle(width, height/2, 50, height, { isStatic: true });
         
-        World.add(world, [ground, leftWall, rightWall]);
+        // 월드에 모든 벽 추가
+        World.add(world, [ground, ceiling, leftWall, rightWall]);
 
-        // 3. 마우스 상호작용 설정
+        // 3. 마우스 설정
         let canvasmouse = Mouse.create(canvas.elt);
         canvasmouse.pixelRatio = pixelDensity();
         let options = {
@@ -66,19 +71,16 @@ html_code = """
         mConstraint = MouseConstraint.create(engine, options);
         World.add(world, mConstraint);
 
-        // 4. 물리 시뮬레이션 시작
         Runner.run(Runner.create(), engine);
       }
 
       function mouseClicked() {
-        // 드래그 중이 아닐 때만 공 생성
         if (!mConstraint.body) {
            let r = random(10, 20);
            let newBall = Bodies.circle(mouseX, mouseY, r, {
-             restitution: 0.8,
+             restitution: 0.9, // 탄성 (더 잘 튀기게 설정)
              friction: 0.005,
-             density: 0.04,
-             render: { fillStyle: '#FF0055' }
+             density: 0.04
            });
            World.add(world, newBall);
         }
@@ -87,17 +89,20 @@ html_code = """
       function draw() {
         background(240);
 
-        // 바닥 그리기
+        // 벽 그리기 (회색)
         noStroke();
         fill(100);
         rectMode(CENTER);
-        rect(ground.position.x, ground.position.y, width, 50);
+        rect(ground.position.x, ground.position.y, width, 50); // 바닥
+        rect(ceiling.position.x, ceiling.position.y, width, 50); // 천장
+        rect(leftWall.position.x, leftWall.position.y, 50, height); // 왼쪽
+        rect(rightWall.position.x, rightWall.position.y, 50, height); // 오른쪽
 
         // 공 그리기
         let bodies = Composite.allBodies(world);
         for (let i = 0; i < bodies.length; i++) {
           let body = bodies[i];
-          if (body.isStatic) continue;
+          if (body.isStatic) continue; // 벽은 위에서 이미 그림
 
           fill(255, 0, 100);
           push();
@@ -107,7 +112,7 @@ html_code = """
           pop();
         }
 
-        // 드래그 선 그리기
+        // 마우스 드래그 선
         if (mConstraint.body) {
           let pos = mConstraint.body.position;
           let offset = mConstraint.constraint.pointB;
@@ -121,5 +126,4 @@ html_code = """
 </html>
 """
 
-# Streamlit 내장 함수로 HTML 실행
 components.html(html_code, height=500)
